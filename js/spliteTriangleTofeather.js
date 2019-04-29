@@ -706,7 +706,7 @@ function createSquareCap(points ,startCap, endCap ,color,clrArr , linewid){
     }
 }
 
-function draw_Cap(points){
-    let gl = getContextgl();
-    gl.C
-}
+// function draw_Cap(points){
+//     let gl = getContextgl();
+//     gl.C
+// }
