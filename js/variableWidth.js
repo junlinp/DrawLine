@@ -25,7 +25,7 @@ var line_fs = `
 precision mediump float;
 varying vec4 v_color;
 void main(){
-    gl_FragColor = v_color;
+    gl_FragColor = v_color; 
 }`
 
 
@@ -233,10 +233,19 @@ function generateWidth(arr_point, line_width) {
 
     for(let i = 0; i < left_point.length; i++) {
         draw_block.pts.push(left_point[i], right_point[i]);
-        draw_block.color.push(
-            new Color(0.0, 0.0, 0.0, 1.0),
-            new Color(0.0, 0.0, 0.0, 1.0),
-        )
+        if (i == 0) {
+
+            draw_block.color.push(
+                new Color(0.0, 0.0, 0.0, 1.0),
+                new Color(0.0, 0.0, 0.0, 1.0),
+            )
+        } else {
+
+            draw_block.color.push(
+                new Color(0.0, 0.0, 0.0, 0.0),
+                new Color(0.0, 0.0, 0.0, 0.0),
+            )
+        }
     }
 
     return [draw_block];
