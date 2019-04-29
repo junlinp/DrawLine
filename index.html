@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>test_line</title>
+</head>
+
+
+<body >
+    <canvas id="webgl" width="600" height="600"></canvas>
+    <div id="container"></div>
+    <script src="./data/oneline.js"></script>
+    <script src="./data/lesspoints.js"></script>
+    <script src="./data/NHDmap.js"></script>
+    <script src="./data/test.js"></script>
+
+    <script src="./lib/three.js"></script>
+    <script src="./lib/GL_Util.js"></script>
+    <script src="./lib/dat.gui.js"></script>
+    <script src="./lib/stats.js"></script>
+     
+    <script src="./js/line.js"></script>
+    <script src="./js/spliteTriangleTofeather.js"></script>
+    <script src="./js/variableWidth.js"></script>
+    
+    <script>
+    window.onload = comparisonline();
+    //window.onload = drawFeatherLine();
+
+
+    // window.onload = drawGradientPolyline();
+    // window.onload = spliteTriangle();
+    // window.onload = drawPoints();
+    // window.onload = drawArc();
+    // window.onload = getThreeTriangleStrip();
+
+
+    function comparisonline(){
+        var line =  {
+            antialiasing:true
+        };
+        let gl = getWebglEle(line.antialiasing);
+
+        gl.clearColor(0.9, 0.9, 0.9, 1);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+
+    //console.log(gl.getContextAttributes());
+        let coordinate = [
+            new THREE.Vector3(0.5, 0.5, 0.0),
+            new THREE.Vector3(0.3, 0.3, 0.0)
+        ];
+        class Color {
+            construct(R, G, B, alpha) {
+                this.r = R;
+                this.g = G;
+                this.b = B;
+                this.alpha = alpha;
+                this.a = alpha;
+            }
+        }
+
+        let colors = [
+            new Color(0, 0, 0, 1.0),
+            new Color(0, 0, 0, 1.0)
+        ]
+        let LINES = 1;
+        drawlineSequence(gl, coordinate, colors, LINES);
+        for(let i = 0; i < 8; i++) {
+            let temp_coor = []
+            coordinate.forEach( (item) => {
+                let t = new THREE.Vector3(item.x + i * 0.1, item.y, item.z);
+                temp_coor.push(t);
+            })
+            console.log(temp_coor);
+            drawlineSequence(gl, temp_coor, colors, LINES);
+
+        }
+
+        var obj = line;
+        var gui = new dat.GUI();
+        gui.add(obj,'antialiasing').onChange(redraw);
+
+        function redraw(){
+            console.log(line);
+            drawlineSequence(line);
+        }
+    }
+
+    function initGUI(){
+        var simpleLine =  {
+            width : 0.1 ,
+            feather:false,
+            gradient:false,
+            triangle:false,
+            // color:[0,0,1,0],
+            join: 'sharpJoint'
+        };
+
+        // drawDifferJoint(simpleLine);
+        // spliteTriangle(simpleLine,PS);
+        // getThreeTriangleStrip(PS,simpleLine);
+        BevelledAntialiased(PS, simpleLine);
+
+        
+        var obj = simpleLine;
+        var gui = new dat.GUI();
+        gui.add(obj,'feather').onChange(redraw);
+        gui.add(obj, 'gradient').onChange(redraw);
+        gui.add(obj,'triangle').onChange(redraw);
+        //gui.add(obj,'color',).onChange(redraw);
+
+        gui.add(obj, 'width').min(1).max(50).step(0.3).onFinishChange(redraw);
+        gui.add(obj, 'join', ['bevelledJoint', 'ArcJoint', 'sharpJoint']).onChange(redraw);
+        var oFolder = gui.addFolder('其他');
+
+        function redraw(){
+            // drawDifferJoint(simpleLine);
+            // spliteTriangle(simpleLine,PS);
+            // getThreeTriangleStrip(PS,simpleLine);
+            BevelledAntialiased(PS, simpleLine);
+
+        };
+
+        function drawDifferJoint(guiObj){
+            if(guiObj.join == 'sharpJoint'){
+                drawSharpJoint(guiObj);
+            }
+            else{
+                drawBevelledJoint(guiObj);
+            }
+        }
+
+    }
+
+    </script>
+
+</body>
+</html>
