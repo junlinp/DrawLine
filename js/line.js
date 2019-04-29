@@ -863,7 +863,7 @@ var PS = [-0.8,0.8,  -0.6,0.6,   -0.3,0.8,   0.1,0.4,  0.5,0.6,   0.9, -0.2,  0.
 
 var pointToVec = function (points){
     var pts = [];
-    for (var i = 0; i<points.length-1; i+=2){
+    for (var i = 0; i < points.length-1; i+=2){
         let p1 = new THREE.Vector2();
         p1.setX(points[i]);
         p1.setY(points[i+1]);
