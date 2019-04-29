@@ -60,6 +60,10 @@
             }
         }
 
+        drawLineWithFeature(gl, coordinate, 0.01, 0.005);
+        /*
+
+
         let colors = [
             new Color(0, 0, 0, 1.0),
             new Color(0, 0, 0, 1.0)
@@ -76,7 +80,7 @@
             drawlineSequence(gl, temp_coor, colors, LINES);
 
         }
-
+        */
         var obj = line;
         var gui = new dat.GUI();
         gui.add(obj,'antialiasing').onChange(redraw);
