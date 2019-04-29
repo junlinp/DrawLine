@@ -24,9 +24,9 @@
     <script src="./js/variableWidth.js"></script>
     
     <script>
-    window.onload = comparisonline();
+    // window.onload = comparisonline();
     //window.onload = drawFeatherLine();
-
+    window.onload= initGUI();
 
     // window.onload = drawGradientPolyline();
     // window.onload = spliteTriangle();
@@ -89,7 +89,7 @@
 
     function initGUI(){
         var simpleLine =  {
-            width : 0.1 ,
+            width : 10,
             feather:false,
             gradient:false,
             triangle:false,
@@ -100,7 +100,8 @@
         // drawDifferJoint(simpleLine);
         // spliteTriangle(simpleLine,PS);
         // getThreeTriangleStrip(PS,simpleLine);
-        BevelledAntialiased(PS, simpleLine);
+        var points = [-0.5,0.6,-0.8,0,-0.3,0];
+        BevelledAntialiased(points, simpleLine);
 
         
         var obj = simpleLine;
@@ -118,7 +119,7 @@
             // drawDifferJoint(simpleLine);
             // spliteTriangle(simpleLine,PS);
             // getThreeTriangleStrip(PS,simpleLine);
-            BevelledAntialiased(PS, simpleLine);
+            BevelledAntialiased(points, simpleLine);
 
         };
 

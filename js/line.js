@@ -659,7 +659,7 @@ function bevelledJoint(points,lineWidth,isGradient){
 
 
 //平角相接+圆帽相接
-var connectBeJoin = function(array, lineWidth,isGradient){
+var connectBeJoin = function(array, lineWidth){
     var points = [];
     var triangleP = [];
     //起始节点处的处理
@@ -672,16 +672,12 @@ var connectBeJoin = function(array, lineWidth,isGradient){
 
     let t1 = getXY(normal1, array[0], lineWidth);
     let t2 = getXY(normal1.negate(), array[0], lineWidth);
-    points.push(t1);
-    points.push(t2); 
+    points.push(t2);
+    points.push(t1); 
 
     //中间节点处的斜接角
     let len = array.length;
     for(var i = 1; i< len -1; i++){
-        if(isGradient)
-        {
-            linewidth = lineWidth* i/len;
-        }
         var arr = bevelledJoin(array[i-1], array[i], array[i+1], lineWidth);
         points = points.concat(arr);
     }    
@@ -692,25 +688,31 @@ var connectBeJoin = function(array, lineWidth,isGradient){
     let normal2 = getNormal(vec2);
     let t3 = getXY(normal2, array[len - 1],lineWidth);
     let t4 = getXY(normal2.negate(), array[len -1],lineWidth);
-    points.push(t4);
     points.push(t3);
+    points.push(t4);
 
     var len1 = points.length;
-    for (var j = 0; j<len1 -3 ; j+=3){
+    for (var j = 0; j<len1 -3; j+=3){
         let arr1 = points.slice(j,j+5);
+        
         let len2 = arr1.length;
-        for (var k = 0; k< len2-3;k++){
+        for (var k = 0; k< len2-4;k+=4){
             triangleP.push(arr1[k]);
             triangleP.push(arr1[k+1]);
-            triangleP.push(arr1[k+3]);
-            triangleP.push(arr1[k]);
+            triangleP.push(arr1[k+2]);
+
+            triangleP.push(arr1[k+1]);
             triangleP.push(arr1[k+3]);
             triangleP.push(arr1[k+2]);
+
+            triangleP.push(arr1[k+2]);
+            triangleP.push(arr1[k+3]);
+            triangleP.push(arr1[k+4]);
         }
     }
 
-    triangleP.concat([t4,points[len1-2],t4]);
-    triangleP.concat([t4,points[len1-2],t4]);
+    triangleP.concat([points[len1-2],points[len1-3],points[len1-1]]);
+    triangleP.concat([points[len1-3],points[len1-4],points[len1-1]]);
     //triangleP.concat(points);
     triangleP = toXYArray(triangleP);
 

@@ -50,7 +50,7 @@ function drawlineSequence(gl , coordinate, color, drawType){
     // Assume the length of coordinate equals to the length of color
     const colorArr = [];
     color.forEach((item) => {
-       colorArr.push(item.r, item.g, item.g, item.alpha);
+       colorArr.push(item.r, item.g, item.b, item.alpha);
     });
 
     var colorbuff = createBuffer(gl, new Float32Array(colorArr));
