@@ -29,9 +29,9 @@ void main(){
 }`
 
 
-function getWebglEle(isanitialiased) {
+function getWebglEle() {
     const canvas = document.getElementById("webgl");
-    const gl = canvas.getContext('webgl', {antialias: isanitialiased});
+    let gl = canvas.getContext('webgl', {antialias: false});
     // gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
     return gl;
 }
@@ -42,9 +42,7 @@ function getWebglEle(isanitialiased) {
 // @ drawType : gl.triangle of gl.triangle_strip
 // Returens : void
 function drawlineSequence(gl, coordinate, color, drawType) {
-
     const program = createProgram(gl, line_vs, line_fs);
-
     gl.useProgram(program.program);
 
     const aLine = [];
@@ -66,83 +64,83 @@ function drawlineSequence(gl, coordinate, color, drawType) {
 }
 
 
-function drawFeatherLine() {
-    var gl = getContextgl();
+// function drawFeatherLine() {
+//     var gl = getContextgl();
 
-    gl.clearColor(0.9, 0.9, 0.9, 1);
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    var program = createProgram(gl, line_vs, line_fs);
-    gl.useProgram(program.program);
+//     gl.clearColor(0.9, 0.9, 0.9, 1);
+//     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+//     var program = createProgram(gl, line_vs, line_fs);
+//     gl.useProgram(program.program);
 
-    //绘制未经过处理的线
-    var aLine = [-0.6, 0.9, -0.9, 0.2];
-    var colorArr = [];
-    for (let i = 0; i < aLine.length / 2; i++) {
-        colorArr = colorArr.concat([0, 0, 0, 1]);
-    }
-    var u_translate = new THREE.Matrix4();
-    u_translate.makeTranslation(-0.1, 0, 0);
-    gl.uniformMatrix4fv(program.u_translate, false, new Float32Array(u_translate.elements));
-    // gl.uniform1i(program.u_iscahngecolor, 0);
-    var colorbuff = createBuffer(gl, new Float32Array(colorArr));
-    var lineBuffer = createBuffer(gl, new Float32Array(aLine));
-    bindAttribute(gl, lineBuffer, program.a_Pos, 2);
-    bindAttribute(gl, colorbuff, program.a_color, 4);
-    var n = aLine.length / 2;
-    gl.drawArrays(gl.LINES, 0, n);
+//     //绘制未经过处理的线
+//     var aLine = [-0.6, 0.9, -0.9, 0.2];
+//     var colorArr = [];
+//     for (let i = 0; i < aLine.length / 2; i++) {
+//         colorArr = colorArr.concat([0, 0, 0, 1]);
+//     }
+//     var u_translate = new THREE.Matrix4();
+//     u_translate.makeTranslation(-0.1, 0, 0);
+//     gl.uniformMatrix4fv(program.u_translate, false, new Float32Array(u_translate.elements));
+//     // gl.uniform1i(program.u_iscahngecolor, 0);
+//     var colorbuff = createBuffer(gl, new Float32Array(colorArr));
+//     var lineBuffer = createBuffer(gl, new Float32Array(aLine));
+//     bindAttribute(gl, lineBuffer, program.a_Pos, 2);
+//     bindAttribute(gl, colorbuff, program.a_color, 4);
+//     var n = aLine.length / 2;
+//     gl.drawArrays(gl.LINES, 0, n);
 
-    for (var i = 0; i < 20; i++) {
-        var lineWidth = (0.1 + 0.3 * i) * transform();
-        var arr = spliteALine(aLine, lineWidth);
-        var arr1 = spliteALine(aLine, lineWidth / 2 + lineWidth);
+//     for (var i = 0; i < 20; i++) {
+//         var lineWidth = (0.1 + 0.3 * i) * transform();
+//         var arr = spliteALine(aLine, lineWidth);
+//         var arr1 = spliteALine(aLine, lineWidth / 2 + lineWidth);
 
-        var leftFeather = addColortoFeatherVertex(arr.left, arr1.left);
-        var rightFeather = addColortoFeatherVertex(arr.right, arr1.right);
+//         var leftFeather = addColortoFeatherVertex(arr.left, arr1.left);
+//         var rightFeather = addColortoFeatherVertex(arr.right, arr1.right);
 
-        var u_translate = new THREE.Matrix4();
-        var deltax = 0.1 * i
-        u_translate.makeTranslation(deltax, 0, 0);
-        gl.uniformMatrix4fv(program.u_translate, false, new Float32Array(u_translate.elements));
+//         var u_translate = new THREE.Matrix4();
+//         var deltax = 0.1 * i
+//         u_translate.makeTranslation(deltax, 0, 0);
+//         gl.uniformMatrix4fv(program.u_translate, false, new Float32Array(u_translate.elements));
 
-        //绘制中心线
-        var arr3 = changeToStrip(arr.left, arr.right);
-        var lineBuffer = createBuffer(gl, new Float32Array(arr3));
-        for (let i = 0; i < arr3.length / 2; i++) {
-            colorArr = colorArr.concat([0, 0, 0, 1]);
-        }
+//         //绘制中心线
+//         var arr3 = changeToStrip(arr.left, arr.right);
+//         var lineBuffer = createBuffer(gl, new Float32Array(arr3));
+//         for (let i = 0; i < arr3.length / 2; i++) {
+//             colorArr = colorArr.concat([0, 0, 0, 1]);
+//         }
 
-        //绘制左边的羽化部分
-        var lineBuffer = createBuffer(gl, new Float32Array(leftFeather.triangleStrip));
-        var num = leftFeather.triangleStrip.length / 2;
-        var colorBuffer = createBuffer(gl, new Float32Array(leftFeather.colorArr));
-        bindAttribute(gl, colorBuffer, program.a_color, 4);
-        bindAttribute(gl, lineBuffer, program.a_Pos, 2);
-        gl.drawArrays(gl.TRIANGLES, 0, num);
+//         //绘制左边的羽化部分
+//         var lineBuffer = createBuffer(gl, new Float32Array(leftFeather.triangleStrip));
+//         var num = leftFeather.triangleStrip.length / 2;
+//         var colorBuffer = createBuffer(gl, new Float32Array(leftFeather.colorArr));
+//         bindAttribute(gl, colorBuffer, program.a_color, 4);
+//         bindAttribute(gl, lineBuffer, program.a_Pos, 2);
+//         gl.drawArrays(gl.TRIANGLES, 0, num);
 
-        //绘制右边的羽化部分
-        colorBuffer = createBuffer(gl, new Float32Array(rightFeather.colorArr));
-        bindAttribute(gl, colorBuffer, program.a_color, 4);
-        lineBuffer = createBuffer(gl, new Float32Array(rightFeather.triangleStrip));
-        bindAttribute(gl, lineBuffer, program.a_Pos, 2);
-        gl.drawArrays(gl.TRIANGLES, 0, num);
-    }
+//         //绘制右边的羽化部分
+//         colorBuffer = createBuffer(gl, new Float32Array(rightFeather.colorArr));
+//         bindAttribute(gl, colorBuffer, program.a_color, 4);
+//         lineBuffer = createBuffer(gl, new Float32Array(rightFeather.triangleStrip));
+//         bindAttribute(gl, lineBuffer, program.a_Pos, 2);
+//         gl.drawArrays(gl.TRIANGLES, 0, num);
+//     }
 
-}
+// }
 
-function drawLineWithFeature(gl, arr_point, line_width, feather_width) {
+function drawLineWithFeature(gl, arr_point, line_width, feather_width,guiObj) {
     // generate Feature point
 
     let arr_draw_block = generateFeather(arr_point, line_width, feather_width);
     // drawFeature
 
-
     // drawLineWithWidth
     let arr_width_draw_block = generateWidth(arr_point, line_width);
 
-    arr_draw_block.forEach((draw_block) => {
-        drawlineSequence(gl, draw_block.pts, draw_block.color, draw_block.drawtype);
-    });
-
+    if(guiObj.feather){
+        arr_draw_block.forEach((draw_block) => {
+            drawlineSequence(gl, draw_block.pts, draw_block.color, draw_block.drawtype);
+        });
+    }
     arr_width_draw_block.forEach( (draw_block) => {
         drawlineSequence(gl, draw_block.pts, draw_block.color, draw_block.drawtype);
     })
@@ -204,7 +202,7 @@ function generateFeather(arr_point, line_width, feather_width) {
 
     miter.crossVectors(new THREE.Vector3(0, 0, 1), v1);
     miter.normalize();
-    console.log(miter);
+    // console.log(miter);
     inner = LinePointTranslate(arr_point, miter, line_width);
     outner = LinePointTranslate(arr_point, miter, line_width + feather_width);
     let DrawBlock1 = new DrawBlock();
@@ -242,8 +240,8 @@ function generateWidth(arr_point, line_width) {
         } else {
 
             draw_block.color.push(
-                new Color(0.0, 0.0, 0.0, 0.0),
-                new Color(0.0, 0.0, 0.0, 0.0),
+                new Color(0.0, 0.0, 0.0, 1.0),
+                new Color(0.0, 0.0, 0.0, 1.0),
             )
         }
     }

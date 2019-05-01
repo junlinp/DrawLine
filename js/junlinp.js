@@ -55,10 +55,10 @@ function generateBevelledPoint(pts, line_width) {
         next_vec.normalize();
 
         let semi_vec = new THREE.Vector3();
-        semi_vec.add(pre_vec, next_vec);
+        semi_vec.addVectors(pre_vec, next_vec);
 
         semi_vec.normalize();
-        let semi_width = - line_width / (semi_vec.x * next_vec.x + semi_vec.y * next_vec.y);
+        let semi_width = - line_width / Math.abs(semi_vec.x * next_vec.y - semi_vec.y * next_vec.x);
 
         semi_vec.multiplyScalar(semi_width );
 

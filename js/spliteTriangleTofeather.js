@@ -17,6 +17,126 @@ void main (){
 }`;
 
 
+function generateBevelledPoint(pts, line_width) {
+
+    if (pts === undefined || pts.length < 2) {
+        return undefined;
+    }
+
+    let res = [];
+
+    let start_vector = new THREE.Vector3();
+    start_vector.subVectors(pts[1], pts[0]);
+    let left_miter = new THREE.Vector3();
+    left_miter.crossVectors(new THREE.Vector3(0, 0, 1), start_vector);
+    left_miter.normalize();
+    left_miter.multiplyScalar(line_width);
+
+    let right_miter = left_miter.clone();
+    right_miter.multiplyScalar(-1.0);
+
+    let left_point = new THREE.Vector3();
+    let right_point = new THREE.Vector3();
+
+    left_point.addVectors(pts[0], left_miter);
+    right_point.addVectors(pts[0], right_miter);
+
+    for(let i = 1; i < pts.length - 1; i++) {
+        let pre_point = pts[i - 1];
+        let current_point = pts[i];
+        let next_point = pts[i + 1];
+
+        let pre_vec = new THREE.Vector3();
+        let next_vec = new THREE.Vector3();
+
+        pre_vec.subVectors(current_point, pre_point);
+        next_vec.subVectors(next_point, current_point);
+
+        let direct = new THREE.Vector3();
+        direct.crossVectors(pre_vec, next_vec);
+        // direct is negative stand for clock-wise
+
+
+        next_vec.multiplyScalar(-1.0);
+        pre_vec.normalize();
+        next_vec.normalize();
+
+        let semi_vec = new THREE.Vector3();
+        semi_vec.addVectors(pre_vec, next_vec);
+
+        semi_vec.normalize();
+        let semi_width = - line_width / Math.abs(semi_vec.x * next_vec.y + semi_vec.y * next_vec.x);
+
+        semi_vec.multiplyScalar(semi_width );
+
+
+        let semi_point = new THREE.Vector3();
+        let pre_vec_point = new THREE.Vector3();
+        let next_vec_point = new THREE.Vector3();
+
+        if (direct.z > 0) {
+
+            next_vec.crossVectors(new THREE.Vector3(0, 0, 1), next_vec);
+            pre_vec.crossVectors(new THREE.Vector3(0, 0, -1), pre_vec);
+        } else if (direct.z < 0) {
+
+            next_vec.crossVectors(new THREE.Vector3(0, 0, -1), next_vec);
+            pre_vec.crossVectors(new THREE.Vector3(0, 0, 1), pre_vec);
+        } else {
+            console.log( "Direct equals to zero");
+            return [];
+        }
+
+        pre_vec.multiplyScalar( line_width );
+        next_vec.multiplyScalar(line_width);
+
+        semi_point.addVectors(current_point, semi_vec);
+        pre_vec_point.addVectors(current_point, next_vec);
+        next_vec_point.addVectors(current_point, pre_vec);
+
+        if (direct.z > 0) {
+
+            res.push(left_point, right_point, next_vec_point);
+            res.push(left_point, next_vec_point, semi_point);
+            res.push(next_vec_point, semi_point, pre_vec_point);
+            left_point = semi_point;
+            right_point = pre_vec_point;
+
+        } else if (direct.z < 0) {
+            res.push(left_point, right_point, next_vec_point);
+            res.push(right_point, semi_point, next_vec_point);
+            res.push(next_vec_point, semi_point, pre_vec_point);
+            left_point = pre_vec_point;
+            right_point = semi_point;
+        } else {
+            console.log( "Direct equals to zero");
+            return [];
+        }
+
+    }
+
+
+    let end_index = pts.length - 1;
+
+    let end_vector = new THREE.Vector3();
+    end_vector.subVectors(pts[end_index], pts[end_index - 1]);
+    let end_vector_miter = new THREE.Vector3();
+    end_vector_miter.crossVectors(new THREE.Vector3(0, 0, 1), end_vector);
+    end_vector_miter.normalize();
+    end_vector_miter.multiplyScalar( line_width );
+
+    let left_end_point = new THREE.Vector3();
+    let right_end_point = new THREE.Vector3();
+
+    left_end_point.addVectors(pts[end_index], end_vector_miter);
+    end_vector_miter.multiplyScalar( -1.0 );
+    right_end_point.addVectors(pts[end_index], end_vector_miter);
+
+    res.push(left_point, right_point, right_end_point);
+    res.push(left_point, right_end_point, left_end_point);
+    return res;
+}
+
 //斜角的反走样
 function spliteTriangle(guiObj,originData){
     var pointsCoor = [];
@@ -159,12 +279,6 @@ function addColortoFeatherVertex(shallow, deep,deepClr, shallowClr){
             }
         }    
     }
-    // let temp_xyz = [];
-    // featherstrip.forEach((item)=>{
-    //     item.z = 0;
-    //     temp_xyz.push(item.x, item.y, item.z);
-    // })
-    // FeatherStrip.triangleStrip = temp_xyz;
     FeatherStrip.triangleStrip = toXYArray(featherstrip) ;
 
     FeatherStrip.colorArr = color;
@@ -174,7 +288,7 @@ function addColortoFeatherVertex(shallow, deep,deepClr, shallowClr){
 
 
 //平角、斜角以及圆角的反走样
-function threeAntialiased(originData, guiObj){
+function threeAntialiased(originData, gui_object){
     var dataVectors = pointToVec(originData);
     var insertCoor = {};//存放四条线的坐标，一共三条三角形坐标条带
     let shallowClr = [0,0,0,1];
@@ -193,21 +307,21 @@ function threeAntialiased(originData, guiObj){
     //获得绘制圆角的坐标
     let originData2 = [];
     for(let i = 0; i<dataVectors.length; i++){
-        let x = dataVectors[i].x+0.9;
+        let x = dataVectors[i].x+1;
         let y = dataVectors[i].y;
         let pt = new THREE.Vector2(x,y);
         originData2.push(pt);
     }
 
     
-    var linewidth = guiObj.width*transform();
+    var linewidth = gui_object.width*transform();
     var featherWidth = linewidth;
 
-    draw_Sharp_Joint(gl,originData, guiObj);
-    draw_BevelledJoint(gl,originData1);
-    draw_ArcJoint(gl,originData2);
+    draw_Sharp_Joint(gl,originData, gui_object);
+    draw_BevelledJoint(gl,originData1,gui_object);
+    draw_ArcJoint(gl,originData2,gui_object);
 
-    function draw_BevelledJoint(gl,data){
+    function draw_BevelledJoint(gl,data,guiObj){
         let twoLineCoor = getTwoWholeLine(data, linewidth);
         insertCoor.left = twoLineCoor.left;
         insertCoor.right = twoLineCoor.right;
@@ -220,29 +334,31 @@ function threeAntialiased(originData, guiObj){
         let rightStrip = addColortoFeatherVertex(insertCoor.rightFeather,insertCoor.right,shallowClr,deepClr);
         let centralStrip = connectBeJoin(data,linewidth);
 
-        // let centralStrip = {};
-        // centralStrip.triangleStrip = connectBeJoin(dataVectors,linewidth);
-        // let color = [];
-        // for(let i =0; i<centralStrip.triangleStrip.length; i++){
-        //     let clr = new color(1,1,1,1);
-        //     color.push(clr.r, clr.g, clr.b, clr.a);
-        // }
-        // centralStrip.colorArr = color;
 
+        let points=[];
+        for(let i = 0;i<data.length;i++){
+            let pt = new THREE.Vector3(data[i].x,data[i].y,0);
+            points.push(pt);
+        }
+        let triangles = generateBevelledPoint(points,linewidth/2);
+        let color =[];
+        let clr = new Color(0,0,0,1);
+        for(let i = 0;i<triangles.length;i++){
+            color.push(clr);
+        }
+
+        // draw_Cap(gl,data,linewidth,guiObj);
+        draw_Cap(gl,data,linewidth,featherWidth,guiObj);
+
+        drawlineSequence(gl, triangles,color,4);
         //中心线和左右羽化边缘
         draw_Bevelled_Feather(gl,centralStrip, leftStrip, rightStrip);
-        // drawlineSequence(gl, leftStrip.triangleStrip, leftStrip.colorArr, draw_type);
-        // drawlineSequence(gl, rightStrip.triangleStrip, rightStrip.colorArr, draw_type);
-        // drawlineSequence(gl, centralStrip.triangleStrip, rightStrip.colorArr, draw_type);
-        
-
     }
 
-    function draw_ArcJoint(gl,data){
+    function draw_ArcJoint(gl,data,guiObj){
         let twoLineCoor = roundCorner(data, linewidth);
         insertCoor.left = twoLineCoor.left;
         insertCoor.right = twoLineCoor.right;
-        // var centralFan = twoLineCoor.fan;
         let centralFan = getFan(data, linewidth);
     
         twoLineCoor = roundCorner(data, linewidth +  featherWidth);
@@ -252,21 +368,23 @@ function threeAntialiased(originData, guiObj){
         let leftStrip = addColortoFeatherVertex(insertCoor.leftFeather, insertCoor.left,shallowClr,deepClr);
         let rightStrip = addColortoFeatherVertex(insertCoor.rightFeather,insertCoor.right,shallowClr,deepClr);
         let centralStrip = connectBeJoin(data,linewidth);
-
-        // var centralStrip = {};
-        // centralStrip.triangleStrip =  connectBeJoin(dataVectors,linewidth);
-        // let color = [];
-        // for(let i =0; i<centralStrip.triangleStrip.length; i++){
-        //     let clr = new color(1,1,1,1);
-        //     color.push(clr.r, clr.g, clr.b, clr.a);
-        // }
-        // centralStrip.colorArr = color;
         
-        draw_Bevelled_Feather(gl,centralStrip, leftStrip, rightStrip,centralFan);    
-        // drawlineSequence(gl,leftStrip.triangleStrip,leftStrip.colorArr,draw_type);//GL.TRIANGLES
-        // drawlineSequence(gl,rightStrip.triangleStrip,rightStrip.colorArr,draw_type);
-        // drawlineSequence(gl,centralStrip.triangleStrip,centralStrip.colorArr,draw_type);
-        // drawlineSequence(gl,centralFan.triangleStrip,centralFan.colorArr,draw_type);//gl.TRIANGLE_FAN
+        let points=[];
+        for(let i = 0;i<data.length;i++){
+            let pt = new THREE.Vector3(data[i].x,data[i].y,0);
+            points.push(pt);
+        }
+        let triangles = generateBevelledPoint(points,linewidth/2);
+        let color =[];
+        let clr = new Color(0,0,0,1);
+        for(let i = 0;i<triangles.length;i++){
+            color.push(clr);
+        }
+
+        // draw_Cap(gl,data,linewidth,guiObj.cap);
+        draw_Cap(gl,data,linewidth,featherWidth,guiObj);
+        drawlineSequence(gl, triangles,color,4);
+        draw_Bevelled_Feather(gl,centralStrip, leftStrip, rightStrip,centralFan);
     }
 
     function roundCorner(originData, lineWidth){
@@ -299,6 +417,7 @@ function threeAntialiased(originData, guiObj){
 
             let arr = bevelledJoin(originData[i-1], originData[i], originData[i+1], lineWidth);
             let arr2 = ArcJoin(originData[i],arr[0],arr[2]);    
+            arr2 = toXYArray(arr2);
             let arr3 = arr2.slice(2);
             // let arr3 = arr2;
             central_fan.push(arr2);
@@ -330,8 +449,6 @@ function threeAntialiased(originData, guiObj){
         twoRoundLine.left = pt_lft;
         twoRoundLine.right = pt_rht;
         twoRoundLine.fan = central_fan;
-        //console.log(pt_lft);
-
         return twoRoundLine;
     }
 
@@ -443,24 +560,21 @@ function threeAntialiased(originData, guiObj){
         
     //绘制三条三角形带(添加羽化)
     function draw_Bevelled_Feather(gl,centralStrip,leftStrip,rightStrip,centralFan){
-        // var gl = getContextgl();
-        // gl.clearColor(0.8, 0.8, 0.8, 1);
-        // gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-        this.gl;
         var program = createProgram(gl, v_feather, f_feather);
         gl.useProgram(program.program);
 
-        var centralBuffer = createBuffer(gl,new Float32Array(centralStrip));
-        var colorArray = [];
-        for(var i =0; i<centralStrip.length/2; i++){
-            colorArray = colorArray.concat([0,0,1,0.8]);
-        }
-        bindAttribute(gl,centralBuffer,program.a_triPos,2);  
-        var colorBuffer = createBuffer(gl,new Float32Array(colorArray));
+        // var centralBuffer = createBuffer(gl,new Float32Array(centralStrip));
+        // var colorArray = [];
+        // for(var i =0; i<centralStrip.length/2; i++){
+        //     colorArray = colorArray.concat([0,0,0,1]);
+        // }
+        // bindAttribute(gl,centralBuffer,program.a_triPos,2);  
+        // var colorBuffer = createBuffer(gl,new Float32Array(colorArray));
 
-        bindAttribute(gl, colorBuffer,program.a_color,4);
-        var n = centralStrip.length/2;
-        gl.drawArrays(gl.TRIANGLES,0,n);
+        // bindAttribute(gl, colorBuffer,program.a_color,4);
+        // var n = centralStrip.length/2;
+        //console.log(gl.TRIANGLE_FAN);
+        // gl.drawArrays(gl.TRIANGLES,0,n);
 
 
         if(typeof centralFan!='undefined'){
@@ -468,7 +582,7 @@ function threeAntialiased(originData, guiObj){
             let len = centralFan.length;
             for(var j = 0; j<len; j++){
                 for(var i =0; i<centralFan[j].length/2; i++){
-                    colorArray = colorArray.concat([0,0,0,0.8]);
+                    colorArray = colorArray.concat([0,0,0,1]);
                 }
     
                 var fanBuffer = createBuffer(gl,new Float32Array(centralFan[j]));
@@ -483,39 +597,29 @@ function threeAntialiased(originData, guiObj){
         }
 
         //羽化
-        if(guiObj.feather){
+        if(gui_object.feather){
             var triangleBuffer = createBuffer(gl,new Float32Array(leftStrip.triangleStrip));
             var colorBuffer1 = createBuffer(gl,new Float32Array(leftStrip.colorArr));
             bindAttribute(gl,triangleBuffer,program.a_triPos,2);
             bindAttribute(gl, colorBuffer1,program.a_color,4);
             var num = leftStrip.triangleStrip.length/2;
-            console.log(num);
             gl.drawArrays(gl.TRIANGLES,0,num);
 
 
             triangleBuffer = createBuffer(gl,new Float32Array(rightStrip.triangleStrip));
             colorBuffer1 = createBuffer(gl,new Float32Array(rightStrip.colorArr));
-            // gl.uniform1i(program.u_type,0);
             bindAttribute(gl,triangleBuffer,program.a_triPos,2);
             bindAttribute(gl, colorBuffer1,program.a_color,4);
             num = rightStrip.triangleStrip.length/2;
             gl.drawArrays(gl.TRIANGLES,0,num);
-            console.log(num);
         }
     }
-
-
-
-
-
 
 
     function draw_Sharp_Joint(gl,originData, guiObj){
         var dataVectors = pointToVec(originData);
         var insertCoor = {};
         
-        // var line_width = transform()*guiObj.width;
-        // var featherWidth = line_width;
         var twoPointsArray = insertPoints(dataVectors,linewidth,guiObj.gradient);
         var res = insertPoints(twoPointsArray[0],featherWidth,false);
         var leftFeatherArray = res[0];
@@ -534,10 +638,10 @@ function threeAntialiased(originData, guiObj){
         var rightstrip = addColortoFeatherVertex(insertCoor.rightFeather,insertCoor.right,shallowClr,deepClr);
     
         drawTheFeather(gl,centralLine,leftstrip, rightstrip,centralTriangle, guiObj);
-
+        draw_Cap(gl,dataVectors,linewidth,featherWidth,guiObj);
     
         function drawTheFeather(gl,centralLine,leftStrip, rightStrip,centralTriangle, guiObj){
-            gl.clearColor(1, 1, 1, 1);
+            gl.clearColor( 0.8,0.8,0.8,1);
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
             var program = createProgram(gl, v_feather, f_feather);
             gl.useProgram(program.program);
@@ -551,7 +655,7 @@ function threeAntialiased(originData, guiObj){
             // gl.uniform1i(program.u_type,1);
             var colorArray = [];
             for(var i =0;i<centralLine.length/2; i++){
-                colorArray = colorArray.concat([0,0,0,0.8]);
+                colorArray = colorArray.concat([0,0,0,1]);
             }
             bindAttribute(gl,centralBuffer,program.a_triPos,2);  
             var colorBuffer = createBuffer(gl,new Float32Array(colorArray));
@@ -603,12 +707,6 @@ function threeAntialiased(originData, guiObj){
     
 }
 
-
-
-/*
-//折线段的平滑
-
-*/
 //平滑折线段
 function smoothLine(vectors){
     var outputArr = [];
@@ -647,47 +745,85 @@ function getResultLine(vectors, num){
 /*
 //绘制线cap
 */
-function createaRoundCap(points, startCap, endCap,color, startClrArr, endClrArr, radius){
+function createRoundCap(points,radius){
+    const pi = Math.PI;
+    let cap ={};
     let vec1 = new THREE.Vector2();
-    vec1.subVectors(points[1] ,points[0]);
-    vec1.normalize();
-    vec1 = getNormal(vec1);
+    let vec2 = new THREE.Vector2();
 
-    let pt1 = getXY(vec1,points[0],radius);
-    let pt2 = getXY(vec1.negate(), points[0],radius);
+    
+    let startCap = [];
+    let endCap =[];
+    let start_arc = [];
+    let end_arc = [];
+    let color  = new Color(0,0,0,1), startClrArr =[], endClrArr = [];
+    
+    startCap.push(points[0]);
+    endCap.push(points[points.length-1]);
+    const num = 180;
+    for(let i = 0;i<num+1;i++){
+        vec1.subVectors(points[0] ,points[1]);
+        vec1.normalize();
+        vec2 = getNormal(vec1);
+    
+        let cosin = Math.cos(pi/num*i);
+        let sin = Math.sin(pi/num*i);
+        let x = vec1.x *sin +vec2.x*cosin;
+        let y = vec1.y *sin+ vec2.y*cosin;
 
-    startCap = ArcJoin(points[0], pt1, pt2);
+        let vec_pt = new THREE.Vector2(x,y);
+        let pt = getXY(vec_pt,points[0],radius);
+        startCap.push(pt);
+        start_arc.push(pt);
 
-    vec2.subVectors(points[points.length-1],points[points.length-2]);
-    vec2.normalize();
+        vec1.subVectors(points[points.length - 1] ,points[points.length - 2]);
+        vec1.normalize();
+        vec2 = getNormal(vec1); 
+        
+        x = vec1.x *sin +vec2.x*cosin;
+        y = vec1.y *sin+ vec2.y*cosin;
+        vec_pt.setX(x);
+        vec_pt.setY(y);
 
-    pt1 = getXY(vec1, points[points.length-1],radius);
-    pt2 = getXY(vec1.negate(), points[points.length-1],radius);
-
-    endCap = ArcJoin(points[points.length-1], pt1, pt2);
+        pt = getXY(vec_pt,points[points.length -1],radius);
+        endCap.push(pt);
+        end_arc.push(pt);
+    }
     for (let i = 0; i<startCap.length; i++){
         startClrArr.push(color);
     }
     for(let i = 0; i<endCap.length; i++){
         endClrArr.push(color);
     }
+    cap.startCap = startCap;
+    cap.endCap = endCap;
+    cap.startClrArr = startClrArr;
+    cap.endClrArr = endClrArr;
+    cap.start_arc = start_arc;
+    cap.end_arc = end_arc;
+
+    return cap; 
 }
 
+
 //startCap:TRIANGLE_STRIP
-function createSquareCap(points ,startCap, endCap ,color,clrArr , linewid){
+function createSquareCap(points , width){
+    let startCap =[], endCap=[] ,color,clrArr=[];
+
     let vec1 = new THREE.Vector2();
     let vec2 = new THREE.Vector2();
-    vec1.subVectors(points[1],points[0]);
+    vec1.subVectors(points[0],points[1]);
     vec1.normalize();
     vec2 = getNormal(vec1);
 
-    width = linewid/2;
+    
     let p1 = getXY(vec2, points[0],width);
     let p2 = getXY(vec1,p1,width);
     let p3 = getXY(vec2.negate(),points[0],width);
-    let p4 = getXY(p3,points[0],width);
+    let p4 = getXY(vec1,p3,width);
 
     startCap.push(p1, p2, p3, p4);
+    let line_start = [p1, p2, p4, p3];
 
     vec1.subVectors(points[points.length -1],points[points.length-2]);
     vec1.normalize();
@@ -699,14 +835,127 @@ function createSquareCap(points ,startCap, endCap ,color,clrArr , linewid){
     p4 = getXY(vec1,p3,width);
 
     endCap.push(p1, p2, p3, p4);
+    let line_end = [p1, p2, p4, p3];
+
 
     //首尾线帽的颜色
+    color = new Color(0,0,0,1);
     for(let i = 0; i<startCap.length; i++){
         clrArr.push(color);
     }
+
+    let SquareCap = {};
+
+    SquareCap.startCap = startCap;
+    SquareCap.endCap = endCap;
+    SquareCap.clrArr = clrArr;
+    SquareCap.startLine = line_start;
+    SquareCap.endLine = line_end;
+
+    return SquareCap;
 }
 
-// function draw_Cap(points){
-//     let gl = getContextgl();
-//     gl.C
-// }
+
+function vec2Tovec3(vectors){
+    let result_vecs = [];
+    for(let i = 0;i<vectors.length; i++){
+        let v = new THREE.Vector3(vectors[i].x,vectors[i].y, 0);
+        result_vecs.push(v);
+    }
+    return result_vecs;
+}
+
+function draw_Cap(gl,vec,linewidth,featherwidth,lineGui){
+    if(lineGui.cap ==="butt"){
+        return;
+    }
+    if(lineGui.cap ==="round"){
+        let startRoundCap = [];
+        let endRoundCap = [];
+
+        let cap = createRoundCap(vec,linewidth);
+        startRoundCap = cap.startCap;
+        endRoundCap = cap.endCap;
+        let color_start =cap.startClrArr;
+        let color_end = cap.endClrArr;
+
+        startRoundCap = vec2Tovec3(startRoundCap);
+        endRoundCap = vec2Tovec3(endRoundCap);
+        // console.log(gl.TRIANGLE_FAN);
+        drawlineSequence(gl,startRoundCap,color_start,6);
+        drawlineSequence(gl,endRoundCap,color_end,6);   
+        
+        if(lineGui.feather){
+            let cap_feather = createRoundCap(vec,linewidth+featherwidth);
+            let FeatherStrip = draw_Cap_Feather(cap.start_arc,cap_feather.start_arc,new Color(0,0,0,1),new Color(1,1,1,1));
+            drawlineSequence(gl,FeatherStrip.triangleStrip,FeatherStrip.colorArr,5);
+    
+            FeatherStrip = draw_Cap_Feather(cap.end_arc,cap_feather.end_arc,new Color(0,0,0,1),new Color(1,1,1,1));
+            drawlineSequence(gl,FeatherStrip.triangleStrip,FeatherStrip.colorArr,5);    
+        }
+    }
+
+    if(lineGui.cap ==="square"){
+        let startSquareCap = [];
+        let endSquareCap = [];
+        let color=[];
+
+        let SquareCap = createSquareCap(vec, linewidth);
+        color = SquareCap.clrArr;
+        startSquareCap = vec2Tovec3(SquareCap.startCap);
+        endSquareCap = vec2Tovec3(SquareCap.endCap);
+        drawlineSequence(gl,startSquareCap,color,5);
+        drawlineSequence(gl,endSquareCap,color,5);
+
+        if(lineGui.feather){
+            let cap_feather = createSquareCap(vec,linewidth+featherwidth);
+            let FeatherStrip = draw_Cap_Feather(SquareCap.startLine,cap_feather.startLine,new Color(0,0,0,1),new Color(1,1,1,1));
+            drawlineSequence(gl,FeatherStrip.triangleStrip,FeatherStrip.colorArr,5);
+    
+            console.log(cap_feather.endLine);
+            FeatherStrip = draw_Cap_Feather(SquareCap.endLine,cap_feather.endLine,new Color(0,0,0,1),new Color(1,1,1,1));
+            drawlineSequence(gl,FeatherStrip.triangleStrip,FeatherStrip.colorArr,5);    
+        }
+    }
+}
+
+function draw_Cap_Feather(deepArr,shallowArr,deepClr,shallowClr){
+    let FeatherStrip ={};
+    let featherstrip = [];
+    let color = [];
+    
+    let deep = vec2Tovec3(deepArr);
+    let shallow = vec2Tovec3(shallowArr);
+
+    let len = shallow.length;
+    // if(len<2){
+    //     return ;
+    // }
+    if(len<3){
+        for(let i =0; i<len-1; i++){
+            featherstrip.push(shallow[i]);
+            featherstrip.push(deep[i]);
+            featherstrip.push(shallow[i+1]);
+            featherstrip.push(deep[i+1]);
+            for(let j = 0; j<2;j++){
+               color =  color.concat(shallowClr)
+               color = color.concat(deepClr);
+            }
+        }    
+    }
+    else{
+        for(let i =0; i<len; i++){
+            featherstrip.push(shallow[i]);
+            featherstrip.push(deep[i]);
+            color =  color.concat(shallowClr);
+            color = color.concat(deepClr);
+        }    
+    }
+    FeatherStrip.triangleStrip = featherstrip ;
+
+    FeatherStrip.colorArr = color;
+
+    return FeatherStrip;
+
+}
+
