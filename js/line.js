@@ -726,6 +726,7 @@ function getFan(array,lineWidth){
     for(var i = 1; i< len -1; i++){
         var arr = bevelledJoin(array[i-1], array[i], array[i+1], lineWidth);
         var arr2 = ArcJoin(array[i],arr[0],arr[2]);
+        arr2 = toXYArray(arr2);
         fan.push(arr2);
     }
     return fan;
@@ -925,7 +926,7 @@ function ArcJoin(P, A, B){
     if(vec2.y<0){angle2 =- angle2;}
 
     var array = innerArc(P, (LA+LB)/2, pi/36, angle1, angle2, A, B);
-    array = toXYArray(array);
+    // array = toXYArray(array);
     return array;
 }
 
