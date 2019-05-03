@@ -55,10 +55,10 @@ function generateBevelledPoint(pts, line_width) {
         next_vec.normalize();
 
         let semi_vec = new THREE.Vector3();
-        semi_vec.add(pre_vec, next_vec);
+        semi_vec.addVectors(pre_vec, next_vec);
 
         semi_vec.normalize();
-        let semi_width = - line_width / (semi_vec.x * next_vec.x + semi_vec.y * next_vec.y);
+        let semi_width = - line_width / Math.abs(semi_vec.x * next_vec.y - semi_vec.y * next_vec.x);
 
         semi_vec.multiplyScalar(semi_width );
 
@@ -127,5 +127,38 @@ function generateBevelledPoint(pts, line_width) {
 
     res.push(left_point, right_point, right_end_point);
     res.push(left_point, right_end_point, left_end_point);
+    return res;
+}
+
+
+
+function VectorAdd(lhs, rhs) {
+    let res = new THREE.Vector3();
+    res.addVectors(lhs, rhs);
+    return res;
+}
+
+function VectorSub(lhs, rhs) {
+    let res = new THREE.Vector3();
+    res.subVectors(lhs, rhs);
+    return res;
+}
+
+/**
+ * @return {number}
+ */
+function VectorDot(lhs, rhs) {
+    return lhs.x * rhs.x + lhs.y * rhs.y + lhs.z * rhs.z;
+}
+
+function VectorCross(lhs, rhs) {
+    let res = new THREE.Vector3();
+    res.crossVectors(lhs, rhs);
+    return res;
+}
+
+function VectorMultiplyScalar(lhs, scalar) {
+    let res = new THREE.Vector3();
+    res.multiplyScalar(lhs, scalar);
     return res;
 }
